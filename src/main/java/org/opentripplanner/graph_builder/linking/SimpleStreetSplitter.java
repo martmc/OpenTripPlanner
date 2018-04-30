@@ -350,17 +350,16 @@ public class SimpleStreetSplitter {
 
         // every edge can be split exactly once, so this is a valid label
         SplitterVertex v;
+        String label = String.format("split from %d %3.5f %3.5f", edge.getId(), splitPoint.x, splitPoint.y);
         if (temporarySplit) {
-            v = new TemporarySplitterVertex(graph, "split from " + edge.getId(), splitPoint.x, splitPoint.y,
-                edge, endVertex);
+            v = new TemporarySplitterVertex(graph, label, splitPoint.x, splitPoint.y, edge, endVertex);
             if (edge.isWheelchairAccessible()) {
                 ((TemporarySplitterVertex) v).setWheelchairAccessible(true);
             } else {
                 ((TemporarySplitterVertex) v).setWheelchairAccessible(false);
             }
         } else {
-            v = new SplitterVertex(graph, "split from " + edge.getId(), splitPoint.x, splitPoint.y,
-                edge);
+            v = new SplitterVertex(graph, label, splitPoint.x, splitPoint.y, edge);
         }
 
         // make the edges

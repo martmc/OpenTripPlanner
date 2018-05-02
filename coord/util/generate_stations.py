@@ -26,7 +26,6 @@ import json
 import numpy as np
 import os
 import sys
-import time
 import urllib.request
 
 from geojson import Feature
@@ -82,8 +81,8 @@ def load_polygons_by_system(system_id):
     return None
 
 
-def get_all_bike_system_ids():
-    """ Returns Coord's bike system IDs in the given area.
+def get_dockless_bike_system_ids():
+    """ Returns Coord's dockless bike system IDs in the given area.
 
         We currently don't have an endpoint that returns `systems`,
         so we have to do an area search and find them.
@@ -103,7 +102,12 @@ def get_all_bike_system_ids():
         sys.exit(0)
 
     for feature in json_resp['features']:
-        system_ids.add(feature['properties']["system_id"])
+        sid = feature['properties']["system_id"]
+        # We only generate fake dropoffs for dockless bikes, so skip the docked ones.
+        if sid == 'CapitalBikeShare':
+            # TODO(mahmood): remove this after the API can return docked/dockless status
+            continue
+        system_ids.add(sid)
 
     return list(system_ids)
 
@@ -114,7 +118,7 @@ def load_polygons():
     global BikeToPolygon
     default_system = None
     systems_without_geom = []
-    for s in get_all_bike_system_ids():
+    for s in get_dockless_bike_system_ids():
         geom = load_polygons_by_system(s)
         print("Loading geom for %s " % s, end='')
         if geom:
@@ -144,31 +148,22 @@ def get_system_ids_by_location(lng, lat):
 
 
 def generate_fake_stations():
-    """Generate fake stations.
-
-        It keeps the original stations and adds fake ones to it.
-        It also keeps a copy of the original files with `.old` appended.
-        It generates a geojson file of all stations.
-    """
+    """Generate fake stations as a GeoJSON file."""
     features = []
-    stations = []
     i = 0
     for lng in get_lng_linspace():
         for lat in get_lat_linspace():
             system_ids = get_system_ids_by_location(lng, lat)
             if len(system_ids) > 0:
-                features.append(Feature(geometry=Point((lng, lat))))
-                stations.append(create_station(lng, lat, i, system_ids))
+                features.append(Feature(
+                    geometry=Point((lng, lat)),
+                    properties=create_station(lng, lat, i, system_ids)))
                 i += 1
 
-    # Save the generated data in files
     with open('fake_stations.json', 'w') as outfile:
-        json.dump(stations, outfile, indent=2, sort_keys=True)
-
-    with open('stations-geojson.json', 'w') as outfile:
         geojson.dump(FeatureCollection(features), outfile, indent=2, sort_keys=True)
 
-    print('Total # of stations:', len(stations))
+    print('Total # of stations:', len(features))
 
 
 def get_lat_linspace():

@@ -14,7 +14,6 @@
 package org.opentripplanner.updater.bike_park;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -22,7 +21,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.prefs.Preferences;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.opentripplanner.graph_builder.linking.SimpleStreetSplitter;
@@ -37,6 +35,8 @@ import org.opentripplanner.updater.PollingGraphUpdater;
 import org.opentripplanner.updater.JsonConfigurable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.opentripplanner.graph_builder.linking.SimpleStreetSplitter.*;
 
 /**
  * Graph updater that dynamically sets availability information on bike parking lots.
@@ -146,7 +146,7 @@ public class BikeParkUpdater extends PollingGraphUpdater {
                 BikeParkVertex bikeParkVertex = verticesByPark.get(bikePark);
                 if (bikeParkVertex == null) {
                     bikeParkVertex = new BikeParkVertex(graph, bikePark);
-                    if (!linker.link(bikeParkVertex)) {
+                    if (!linker.linkToClosestWalkableEdge(bikeParkVertex, DESTRUCTIVE_SPLIT)) {
                         // the toString includes the text "Bike park"
                         LOG.warn("{} not near any streets; it will not be usable.", bikePark);
                     }
